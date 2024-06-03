@@ -4,7 +4,7 @@ import React from 'react'
 const Invest = () => {
   return (
     <View>
-      <Text>Invest</Text>
+      <Text>Page</Text>
     </View>
   )
 }
