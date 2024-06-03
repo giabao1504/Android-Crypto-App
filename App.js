@@ -1,5 +1,6 @@
-import React, {useRef, useMemo, useState, useEffect} from 'react';
-import { FlatList, StyleSheet, Text, View, SafeAreaView } from 'react-native';
+import React, { useRef, useMemo, useState, useEffect, useCallback } from 'react';
+import { FlatList, StyleSheet, Text, View, SafeAreaView, TouchableOpacity, ScrollView, RefreshControl, Alert } from 'react-native';
+import { AntDesign } from '@expo/vector-icons'; // Import AntDesign icons
 import ListItem from './components/ListItem';
 import Chart from './components/Chart';
 import {
@@ -8,27 +9,82 @@ import {
 } from '@gorhom/bottom-sheet';
 import { getMarketData } from './services/cryptoService';
 
-const ListHeader = () => (
-  <>
-    <View style={styles.titleWrapper}>
+const ListHeader = ({ sortData, resetData }) => {
+  const [activeTab, setActiveTab] = useState(null);
+
+  const handleTabPress = (key) => {
+    if (activeTab === key) {
+      setActiveTab(null);
+      resetData();
+    } else {
+      setActiveTab(key);
+      sortData(key);
+    }
+  };
+
+  return (
+    <>
+      <View style={styles.titleWrapper}>
         <Text style={styles.largeTitle}>Markets</Text>
       </View>
-    <View style={styles.divider} />
-  </>
-)
+      <View style={styles.divider} />
+      <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.tabView}>
+        <TouchableOpacity style={[styles.tab, activeTab === 'market_cap_rank' && styles.activeTab]} onPress={() => handleTabPress('market_cap_rank')}>
+          <Text style={styles.tabText}>Market Cap</Text>
+          <AntDesign name={activeTab === 'market_cap_rank' ? "caretup" : "caretdown"} size={12} color="black" style={styles.sortIcon} />
+        </TouchableOpacity>
+
+        <TouchableOpacity style={[styles.tab, activeTab === 'price_change_percentage_24h' && styles.activeTab]} onPress={() => handleTabPress('price_change_percentage_24h')}>
+          <Text style={styles.tabText}>24h %</Text>
+          <AntDesign name={activeTab === 'price_change_percentage_24h' ? "caretup" : "caretdown"} size={12} color="black" style={styles.sortIcon} />
+        </TouchableOpacity>
+
+        <TouchableOpacity style={[styles.tab, activeTab === 'current_price' && styles.activeTab]} onPress={() => handleTabPress('current_price')}>
+          <Text style={styles.tabText}>Price</Text>
+          <AntDesign name={activeTab === 'current_price' ? "caretup" : "caretdown"} size={12} color="black" style={styles.sortIcon} />
+        </TouchableOpacity>
+
+      </ScrollView>
+    </>
+  );
+};
 
 export default function App() {
   const [data, setData] = useState([]);
+  const [displayedData, setDisplayedData] = useState([]);
+  const [originalData, setOriginalData] = useState([]);
   const [selectedCoinData, setSelectedCoinData] = useState(null);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
+  const [refreshing, setRefreshing] = useState(false);
+
+  const fetchMarketData = async () => {
+    try {
+      const marketData = await getMarketData();
+      if (marketData) {
+        setData(marketData);
+        setOriginalData(marketData); // Lưu trữ dữ liệu ban đầu
+        setDisplayedData(marketData.slice(0, 50));
+        setTotalPages(Math.ceil(marketData.length / 50));
+      }
+    } catch (error) {
+      if (error.response && error.response.status === 429) {
+        Alert.alert('Too Many Requests', 'You have made too many requests in a short period. Please try again later.');
+      } else {
+        Alert.alert('Error', 'An error occurred while fetching data.');
+      }
+    }
+  };
 
   useEffect(() => {
-    const fetchMarketData = async () => {
-      const marketData = await getMarketData();
-      setData(marketData);
-    }
-
     fetchMarketData();
-  }, [])
+
+    const interval = setInterval(() => {
+      fetchMarketData();
+    }, 30000); // 30 giây
+
+    return () => clearInterval(interval);
+  }, []);
 
   const bottomSheetModalRef = useRef(null);
 
@@ -39,24 +95,72 @@ export default function App() {
     bottomSheetModalRef.current?.present();
   }
 
+  const handlePageChange = (page) => {
+    setCurrentPage(page);
+    setDisplayedData(data.slice((page - 1) * 50, page * 50));
+  }
+
+  const sortData = useCallback((key) => {
+    const sortedData = [...data].sort((a, b) => b[key] - a[key]);
+    setData(sortedData);
+    setDisplayedData(sortedData.slice((currentPage - 1) * 50, currentPage * 50));
+  }, [data, currentPage]);
+
+  const resetData = useCallback(() => {
+    setData(originalData);
+    setDisplayedData(originalData.slice((currentPage - 1) * 50, currentPage * 50));
+  }, [originalData, currentPage]);
+
+  const onRefresh = useCallback(async () => {
+    setRefreshing(true);
+    await fetchMarketData();
+    setRefreshing(false);
+  }, []);
+
   return (
     <BottomSheetModalProvider>
-    <SafeAreaView style={styles.container}>
-      <FlatList
-        keyExtractor={(item) => item.id}
-        data={data}
-        renderItem={({ item }) => (
-          <ListItem
-            name={item.name}
-            symbol={item.symbol}
-            currentPrice={item.current_price}
-            priceChangePercentage7d={item.price_change_percentage_7d_in_currency}
-            logoUrl={item.image}
-            onPress={() => openModal(item)}
-          />
-        )}
-        ListHeaderComponent={<ListHeader />}
-      />
+      <SafeAreaView style={styles.container}>
+        <FlatList
+          keyExtractor={(item) => item.id}
+          data={displayedData}
+          renderItem={({ item }) => (
+            <ListItem
+              marketCapRank={item.market_cap_rank}
+              logoUrl={item.image}
+              name={item.name}
+              symbol={item.symbol}
+              marketCap={item.market_cap}
+              currentPrice={item.current_price}
+              priceChangePercentage24h={item.price_change_percentage_24h}
+              onPress={() => openModal(item)}
+            />
+          )}
+          ListHeaderComponent={<ListHeader sortData={sortData} resetData={resetData} />}
+          ListFooterComponent={
+            <View style={styles.pagination}>
+              {[...Array(totalPages)].map((_, index) => (
+                <TouchableOpacity
+                  key={index + 1}
+                  style={[
+                    styles.pageButton,
+                    currentPage === index + 1 && styles.activePageButton
+                  ]}
+                  onPress={() => handlePageChange(index + 1)}
+                >
+                  <Text style={[
+                    styles.pageButtonText,
+                    currentPage === index + 1 && styles.activePageButtonText
+                  ]}>
+                    {index + 1}
+                  </Text>
+                </TouchableOpacity>
+              ))}
+            </View>
+          }
+          refreshControl={
+            <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
+          }
+        />
       </SafeAreaView>
 
       <BottomSheetModal
@@ -65,7 +169,7 @@ export default function App() {
         snapPoints={snapPoints}
         style={styles.bottomSheet}
       >
-        { selectedCoinData ? (
+        {selectedCoinData ? (
           <Chart
             currentPrice={selectedCoinData.current_price}
             logoUrl={selectedCoinData.image}
@@ -76,7 +180,7 @@ export default function App() {
           />
         ) : null}
       </BottomSheetModal>
-      </BottomSheetModalProvider>
+    </BottomSheetModalProvider>
   );
 }
 
@@ -86,7 +190,7 @@ const styles = StyleSheet.create({
     backgroundColor: '#fff',
   },
   titleWrapper: {
-    marginTop: 20,
+    marginTop: 50,
     paddingHorizontal: 16,
   },
   largeTitle: {
@@ -108,5 +212,50 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.25,
     shadowRadius: 4,
     elevation: 5,
+  },
+  tabView: {
+    marginTop: 10,
+  },
+  tab: {
+    marginLeft: 5,
+    paddingVertical: 5,
+    paddingHorizontal: 10,
+    backgroundColor: 'white',
+    borderRadius: 10,
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  tabText: {
+    fontSize: 16,
+    fontWeight: 'bold',
+    color: 'black',
+  },
+  sortIcon: {
+    marginLeft: 5, // Add margin to separate icon from text
+  },
+  pagination: {
+    flexDirection: 'row',
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginVertical: 20,
+  },
+  pageButton: {
+    marginHorizontal: 5,
+    padding: 10,
+    backgroundColor: '#E0E0E0',
+    borderRadius: 5,
+  },
+  pageButtonText: {
+    fontSize: 16,
+    color: 'black',
+  },
+  activePageButton: {
+    backgroundColor: '#1e90ff',
+  },
+  activePageButtonText: {
+    color: '#fff',
+  },
+  activeTab: {
+    backgroundColor: '#CCCC',
   },
 });
