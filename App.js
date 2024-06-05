@@ -1,6 +1,6 @@
-import React, { useRef, useMemo, useState, useEffect, useCallback } from 'react';
-import { FlatList, StyleSheet, Text, View, SafeAreaView, TouchableOpacity, ScrollView, RefreshControl, Alert } from 'react-native';
-import { AntDesign } from '@expo/vector-icons'; // Import AntDesign icons
+import React, { useRef, useState, useMemo, useEffect, useCallback } from 'react';
+import { FlatList, StyleSheet, View, Text, SafeAreaView, TouchableOpacity, RefreshControl, Alert } from 'react-native';
+import Header from './components/Header'; // Import Header
 import ListItem from './components/ListItem';
 import Chart from './components/Chart';
 import {
@@ -8,46 +8,6 @@ import {
   BottomSheetModalProvider,
 } from '@gorhom/bottom-sheet';
 import { getMarketData } from './services/cryptoService';
-
-const ListHeader = ({ sortData, resetData }) => {
-  const [activeTab, setActiveTab] = useState(null);
-
-  const handleTabPress = (key) => {
-    if (activeTab === key) {
-      setActiveTab(null);
-      resetData();
-    } else {
-      setActiveTab(key);
-      sortData(key);
-    }
-  };
-
-  return (
-    <>
-      <View style={styles.titleWrapper}>
-        <Text style={styles.largeTitle}>Markets</Text>
-      </View>
-      <View style={styles.divider} />
-      <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.tabView}>
-        <TouchableOpacity style={[styles.tab, activeTab === 'market_cap_rank' && styles.activeTab]} onPress={() => handleTabPress('market_cap_rank')}>
-          <Text style={styles.tabText}>Market Cap</Text>
-          <AntDesign name={activeTab === 'market_cap_rank' ? "caretup" : "caretdown"} size={12} color="black" style={styles.sortIcon} />
-        </TouchableOpacity>
-
-        <TouchableOpacity style={[styles.tab, activeTab === 'price_change_percentage_24h' && styles.activeTab]} onPress={() => handleTabPress('price_change_percentage_24h')}>
-          <Text style={styles.tabText}>24h %</Text>
-          <AntDesign name={activeTab === 'price_change_percentage_24h' ? "caretup" : "caretdown"} size={12} color="black" style={styles.sortIcon} />
-        </TouchableOpacity>
-
-        <TouchableOpacity style={[styles.tab, activeTab === 'current_price' && styles.activeTab]} onPress={() => handleTabPress('current_price')}>
-          <Text style={styles.tabText}>Price</Text>
-          <AntDesign name={activeTab === 'current_price' ? "caretup" : "caretdown"} size={12} color="black" style={styles.sortIcon} />
-        </TouchableOpacity>
-
-      </ScrollView>
-    </>
-  );
-};
 
 export default function App() {
   const [data, setData] = useState([]);
@@ -63,7 +23,7 @@ export default function App() {
       const marketData = await getMarketData();
       if (marketData) {
         setData(marketData);
-        setOriginalData(marketData); // Lưu trữ dữ liệu ban đầu
+        setOriginalData(marketData);
         setDisplayedData(marketData.slice(0, 50));
         setTotalPages(Math.ceil(marketData.length / 50));
       }
@@ -81,7 +41,7 @@ export default function App() {
 
     const interval = setInterval(() => {
       fetchMarketData();
-    }, 30000); // 30 giây
+    }, 30000);
 
     return () => clearInterval(interval);
   }, []);
@@ -93,12 +53,12 @@ export default function App() {
   const openModal = (item) => {
     setSelectedCoinData(item);
     bottomSheetModalRef.current?.present();
-  }
+  };
 
   const handlePageChange = (page) => {
     setCurrentPage(page);
     setDisplayedData(data.slice((page - 1) * 50, page * 50));
-  }
+  };
 
   const sortData = useCallback((key) => {
     const sortedData = [...data].sort((a, b) => b[key] - a[key]);
@@ -120,6 +80,7 @@ export default function App() {
   return (
     <BottomSheetModalProvider>
       <SafeAreaView style={styles.container}>
+        <Header sortData={sortData} resetData={resetData} data={data} />
         <FlatList
           keyExtractor={(item) => item.id}
           data={displayedData}
@@ -135,7 +96,6 @@ export default function App() {
               onPress={() => openModal(item)}
             />
           )}
-          ListHeaderComponent={<ListHeader sortData={sortData} resetData={resetData} />}
           ListFooterComponent={
             <View style={styles.pagination}>
               {[...Array(totalPages)].map((_, index) => (
@@ -189,20 +149,6 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: '#fff',
   },
-  titleWrapper: {
-    marginTop: 50,
-    paddingHorizontal: 16,
-  },
-  largeTitle: {
-    fontSize: 24,
-    fontWeight: "bold",
-  },
-  divider: {
-    height: StyleSheet.hairlineWidth,
-    backgroundColor: '#A9ABB1',
-    marginHorizontal: 16,
-    marginTop: 16,
-  },
   bottomSheet: {
     shadowColor: "#000",
     shadowOffset: {
@@ -213,26 +159,6 @@ const styles = StyleSheet.create({
     shadowRadius: 4,
     elevation: 5,
   },
-  tabView: {
-    marginTop: 10,
-  },
-  tab: {
-    marginLeft: 5,
-    paddingVertical: 5,
-    paddingHorizontal: 10,
-    backgroundColor: 'white',
-    borderRadius: 10,
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
-  tabText: {
-    fontSize: 16,
-    fontWeight: 'bold',
-    color: 'black',
-  },
-  sortIcon: {
-    marginLeft: 5, // Add margin to separate icon from text
-  },
   pagination: {
     flexDirection: 'row',
     justifyContent: 'center',
@@ -241,7 +167,8 @@ const styles = StyleSheet.create({
   },
   pageButton: {
     marginHorizontal: 5,
-    padding: 10,
+    paddingHorizontal: 8,
+    paddingVertical: 5,
     backgroundColor: '#E0E0E0',
     borderRadius: 5,
   },
@@ -255,7 +182,5 @@ const styles = StyleSheet.create({
   activePageButtonText: {
     color: '#fff',
   },
-  activeTab: {
-    backgroundColor: '#CCCC',
-  },
 });
+
