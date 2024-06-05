@@ -16,10 +16,15 @@ const AccountTab = ({ onClose }) => {
   return (
     <View style={styles.container}>
       <Text style={styles.tabTitle}>Account</Text>
-      <TouchableOpacity style={styles.optionButton} onPress={openLogin}>
+      <TouchableOpacity style={[styles.optionButton, {
+        borderBottomWidth: 1,
+        borderBottomColor: '#F3F3F3',
+      }]} onPress={openLogin}>
+        <Ionicons name="log-in-outline" size={24} color="black" />
         <Text style={styles.optionText}>Login</Text>
       </TouchableOpacity>
       <TouchableOpacity style={styles.optionButton} onPress={openSignup}>
+        <Ionicons name="person-add-outline" size={24} color="black" />
         <Text style={styles.optionText}>Register</Text>
       </TouchableOpacity>
       <TouchableOpacity style={styles.closeButton} onPress={onClose}>
@@ -27,11 +32,11 @@ const AccountTab = ({ onClose }) => {
       </TouchableOpacity>
 
       <Modal visible={isSignupVisible} animationType="slide">
-        <Signup onClose={closeSignup} />
+        <Signup onClose={closeSignup} onOpen={openLogin} />
       </Modal>
 
       <Modal visible={isLoginVisible} animationType="slide">
-        <Login onClose={closeLogin} />
+        <Login onClose={closeLogin} onOpen={openSignup} />
       </Modal>
     </View>
   );
@@ -44,17 +49,18 @@ const styles = StyleSheet.create({
     padding: 16,
   },
   tabTitle: {
-    fontSize: 24,
+    fontSize: 28,
     fontWeight: 'bold',
-    marginBottom: 16,
+    marginBottom: 24,
   },
   optionButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
     paddingVertical: 10,
-    borderBottomWidth: 1,
-    borderBottomColor: '#ccc',
   },
   optionText: {
     fontSize: 18,
+    marginLeft: 10,
   },
   closeButton: {
     position: 'absolute',
@@ -67,7 +73,7 @@ const styles = StyleSheet.create({
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.8,
     shadowRadius: 2,
-    elevation: 2,
+    elevation: 5,
   },
 });
 

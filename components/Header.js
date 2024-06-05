@@ -108,12 +108,13 @@ const Header = ({ sortData, resetData, data, openModal }) => {
         </TouchableOpacity>
       </ScrollView>
 
-      <Modal transparent visible={isTabVisible} animationType="none">
-        <TouchableOpacity style={styles.overlay} onPress={closeTab}>
+      <Modal transparent visible={isTabVisible}>
+        <View style={styles.overlay}>
+          <TouchableOpacity style={styles.overlay} onPress={closeTab} />
           <Animated.View style={[styles.slidingTab, { transform: [{ translateX: slideAnim }] }]}>
             <AccountTab onClose={closeTab} />
           </Animated.View>
-        </TouchableOpacity>
+        </View>
       </Modal>
     </>
   );
