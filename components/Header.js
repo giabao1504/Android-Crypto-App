@@ -1,11 +1,16 @@
 import React, { useState } from 'react';
-import { View, Text, TouchableOpacity, ScrollView, StyleSheet, TextInput, FlatList, Image } from 'react-native';
+import { View, Text, TouchableOpacity, ScrollView, StyleSheet, TextInput, FlatList, Image, Modal, Animated, Dimensions } from 'react-native';
 import { AntDesign, Ionicons } from '@expo/vector-icons';
+import AccountTab from '../screens/AccountTab';
 
-const Header = ({ sortData, resetData, data }) => {
+const { width } = Dimensions.get('window');
+
+const Header = ({ sortData, resetData, data, openModal }) => {
   const [activeTab, setActiveTab] = useState(null);
   const [searchQuery, setSearchQuery] = useState('');
   const [searchResults, setSearchResults] = useState([]);
+  const [isTabVisible, setIsTabVisible] = useState(false);
+  const [slideAnim] = useState(new Animated.Value(width));
 
   const handleTabPress = (key) => {
     if (activeTab === key) {
@@ -26,7 +31,7 @@ const Header = ({ sortData, resetData, data }) => {
   };
 
   const renderSearchResults = ({ item }) => (
-    <TouchableOpacity style={styles.searchResult}>
+    <TouchableOpacity style={styles.searchResult} onPress={() => openModal(item)}>
       <View style={styles.searchResultLeft}>
         <Image source={{ uri: item.image }} style={styles.searchResultImage} />
         <Text style={styles.searchResultName}>{item.symbol.toUpperCase()}</Text>
@@ -37,52 +42,80 @@ const Header = ({ sortData, resetData, data }) => {
     </TouchableOpacity>
   );
 
-  return (<>
-    <View style={styles.headerWrapper}>
-      <Text style={styles.largeTitle}>Markets</Text>
-      <View style={styles.iconContainer}>
-        <View style={styles.searchContainer}>
-          <Ionicons name="search" size={20} color="black" style={styles.searchIcon} />
-          <TextInput
-            style={styles.searchInput}
-            placeholder="Search..."
-            value={searchQuery}
-            onChangeText={handleSearch}
-          />
+  const openTab = () => {
+    setIsTabVisible(true);
+    Animated.timing(slideAnim, {
+      toValue: 0,
+      duration: 300,
+      useNativeDriver: true,
+    }).start();
+  };
+
+  const closeTab = () => {
+    Animated.timing(slideAnim, {
+      toValue: width,
+      duration: 500, // Make the closing animation slower for smooth effect
+      useNativeDriver: true,
+    }).start(() => {
+      setIsTabVisible(false);
+    });
+  };
+
+  return (
+    <>
+      <View style={styles.headerWrapper}>
+        <Text style={styles.largeTitle}>Markets</Text>
+        <View style={styles.iconContainer}>
+          <View style={styles.searchContainer}>
+            <Ionicons name="search" size={20} color="black" style={styles.searchIcon} />
+            <TextInput
+              style={styles.searchInput}
+              placeholder="Search..."
+              value={searchQuery}
+              onChangeText={handleSearch}
+            />
+          </View>
+          <TouchableOpacity style={styles.icon} onPress={openTab}>
+            <Ionicons name="person-circle-outline" size={28} color="black" />
+          </TouchableOpacity>
         </View>
-        <TouchableOpacity style={styles.icon}>
-          <Ionicons name="person-circle-outline" size={28} color="black" />
-        </TouchableOpacity>
       </View>
-    </View>
-    <View style={styles.divider} />
+      <View style={styles.divider} />
 
-    {searchQuery !== '' && (
-      <FlatList
-        data={searchResults}
-        renderItem={renderSearchResults}
-        keyExtractor={(item) => item.id.toString()}
-        style={styles.searchResultsList}
-      />
-    )}
+      {searchQuery !== '' && (
+        <FlatList
+          data={searchResults}
+          renderItem={renderSearchResults}
+          keyExtractor={(item) => item.id.toString()}
+          style={styles.searchResultsList}
+        />
+      )}
 
-    <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.tabView}>
-      <TouchableOpacity style={[styles.tab, activeTab === 'market_cap_rank' && styles.activeTab]} onPress={() => handleTabPress('market_cap_rank')}>
-        <Text style={styles.tabText}>Market Cap</Text>
-        <AntDesign name={activeTab === 'market_cap_rank' ? "caretup" : "caretdown"} size={12} color="black" style={styles.sortIcon} />
-      </TouchableOpacity>
+      <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.tabView}>
+        <TouchableOpacity style={[styles.tab, activeTab === 'market_cap_rank' && styles.activeTab]} onPress={() => handleTabPress('market_cap_rank')}>
+          <Text style={styles.tabText}>Market Cap</Text>
+          <AntDesign name={activeTab === 'market_cap_rank' ? "caretup" : "caretdown"} size={12} color="black" style={styles.sortIcon} />
+        </TouchableOpacity>
 
-      <TouchableOpacity style={[styles.tab, activeTab === 'price_change_percentage_24h' && styles.activeTab]} onPress={() => handleTabPress('price_change_percentage_24h')}>
-        <Text style={styles.tabText}>24h %</Text>
-        <AntDesign name={activeTab === 'price_change_percentage_24h' ? "caretup" : "caretdown"} size={12} color="black" style={styles.sortIcon} />
-      </TouchableOpacity>
+        <TouchableOpacity style={[styles.tab, activeTab === 'price_change_percentage_24h' && styles.activeTab]} onPress={() => handleTabPress('price_change_percentage_24h')}>
+          <Text style={styles.tabText}>24h %</Text>
+          <AntDesign name={activeTab === 'price_change_percentage_24h' ? "caretup" : "caretdown"} size={12} color="black" style={styles.sortIcon} />
+        </TouchableOpacity>
 
-      <TouchableOpacity style={[styles.tab, activeTab === 'current_price' && styles.activeTab]} onPress={() => handleTabPress('current_price')}>
-        <Text style={styles.tabText}>Price</Text>
-        <AntDesign name={activeTab === 'current_price' ? "caretup" : "caretdown"} size={12} color="black" style={styles.sortIcon} />
-      </TouchableOpacity>
-    </ScrollView>
-  </>
+        <TouchableOpacity style={[styles.tab, activeTab === 'current_price' && styles.activeTab]} onPress={() => handleTabPress('current_price')}>
+          <Text style={styles.tabText}>Price</Text>
+          <AntDesign name={activeTab === 'current_price' ? "caretup" : "caretdown"} size={12} color="black" style={styles.sortIcon} />
+        </TouchableOpacity>
+      </ScrollView>
+
+      <Modal transparent visible={isTabVisible} animationType="none">
+        <TouchableOpacity style={styles.overlay} onPress={closeTab}>
+          <Animated.View style={[styles.slidingTab, { transform: [{ translateX: slideAnim }] }]}>
+            <AccountTab onClose={closeTab} />
+          </Animated.View>
+        </TouchableOpacity>
+      </Modal>
+    </>
   );
 };
 
@@ -192,6 +225,19 @@ const styles = StyleSheet.create({
   },
   redText: {
     color: 'red',
+  },
+  overlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+  },
+  slidingTab: {
+    position: 'absolute',
+    right: 0,
+    top: 0,
+    bottom: 0,
+    width: width * 0.8,
+    backgroundColor: 'white',
+    padding: 16,
   },
 });
 

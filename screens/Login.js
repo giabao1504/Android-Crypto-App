@@ -1,12 +1,40 @@
-import { View, Text } from 'react-native'
-import React from 'react'
+// Login.js
+import React from 'react';
+import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
 
-const Login = () => {
+const Login = ({ onClose }) => {
   return (
-    <View>
-      <Text>Login</Text>
+    <View style={styles.container}>
+      <Text style={styles.title}>Login</Text>
+      {/* Thêm các thành phần cho giao diện đăng nhập tại đây */}
+      <TouchableOpacity style={styles.closeButton} onPress={onClose}>
+        <Text style={styles.closeText}>Close</Text>
+      </TouchableOpacity>
     </View>
-  )
-}
+  );
+};
 
-export default Login
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+    backgroundColor: 'white',
+    padding: 16,
+  },
+  title: {
+    fontSize: 24,
+    fontWeight: 'bold',
+    marginBottom: 16,
+  },
+  closeButton: {
+    marginTop: 20,
+    paddingVertical: 10,
+    backgroundColor: '#ccc',
+    alignItems: 'center',
+  },
+  closeText: {
+    fontSize: 18,
+    color: 'black',
+  },
+});
+
+export default Login;

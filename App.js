@@ -80,7 +80,7 @@ export default function App() {
   return (
     <BottomSheetModalProvider>
       <SafeAreaView style={styles.container}>
-        <Header sortData={sortData} resetData={resetData} data={data} />
+        <Header sortData={sortData} resetData={resetData} data={data} openModal={openModal} />
         <FlatList
           keyExtractor={(item) => item.id}
           data={displayedData}
@@ -183,4 +183,3 @@ const styles = StyleSheet.create({
     color: '#fff',
   },
 });
-
