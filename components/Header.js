@@ -54,7 +54,7 @@ const Header = ({ sortData, resetData, data, openModal }) => {
   const closeTab = () => {
     Animated.timing(slideAnim, {
       toValue: width,
-      duration: 500, // Make the closing animation slower for smooth effect
+      duration: 500,
       useNativeDriver: true,
     }).start(() => {
       setIsTabVisible(false);

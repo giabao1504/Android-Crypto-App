@@ -2,64 +2,6 @@
 import { StyleSheet } from 'react-native';
 import COLORS from '../constants/colors';
 
-const welcomeStyles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: 'white',
-  },
-  imageContainer: {
-    position: 'relative',
-  },
-  image: {
-    height: 300,
-    width: 300,
-    position: 'absolute',
-    top: 140,
-    left: 100,
-    transform: [
-      { translateX: -50 },
-      { translateY: -20 },
-    ],
-  },
-  content: {
-    paddingHorizontal: 22,
-    position: 'absolute',
-    top: 450,
-    width: '100%',
-  },
-  title: {
-    fontSize: 40,
-    fontWeight: '800',
-    color: COLORS.primary,
-  },
-  descriptionContainer: {
-    marginVertical: 10,
-  },
-  descriptionText: {
-    fontSize: 15,
-    color: COLORS.black,
-  },
-  button: {
-    marginTop: 22,
-    width: '100%',
-  },
-  footer: {
-    flexDirection: 'row',
-    marginTop: 12,
-    justifyContent: 'center',
-  },
-  footerText: {
-    fontSize: 16,
-    color: COLORS.black,
-  },
-  loginText: {
-    fontSize: 16,
-    color: COLORS.primary,
-    fontWeight: 'bold',
-    marginLeft: 4,
-  },
-});
-
 const signupStyles = StyleSheet.create({
   container: {
     flex: 1,
@@ -297,4 +239,4 @@ const loginStyles = StyleSheet.create({
   },
 });
 
-export { welcomeStyles, signupStyles, loginStyles };
+export { signupStyles, loginStyles };

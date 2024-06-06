@@ -1,6 +1,6 @@
 import React, { useRef, useState, useMemo, useEffect, useCallback } from 'react';
 import { FlatList, StyleSheet, View, Text, SafeAreaView, TouchableOpacity, RefreshControl, Alert } from 'react-native';
-import Header from './components/Header'; // Import Header
+import Header from './components/Header';
 import ListItem from './components/ListItem';
 import Chart from './components/Chart';
 import {

@@ -7,7 +7,6 @@ import Checkbox from 'expo-checkbox';
 import Button from '../components/Button';
 import { firebase } from '../config';
 import { loginStyles } from './styles';
-import Signup from './Signup';
 
 const Login = ({ onClose, onOpen }) => {
   const [isPasswordShown, setIsPasswordShown] = useState(false);
