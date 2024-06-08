@@ -36,6 +36,11 @@ const Signup = ({ onClose, onOpen }) => {
       }).catch((error) => { alert(error.message) })
   }
 
+  const handleLoginPress = () => {
+    onClose();
+    onOpen();
+  };
+
   return (
     <SafeAreaView style={signupStyles.container}>
       <View style={signupStyles.innerContainer}>
@@ -132,7 +137,7 @@ const Signup = ({ onClose, onOpen }) => {
 
         <View style={signupStyles.footer}>
           <Text style={signupStyles.footerText}>Already have an account ? </Text>
-          <TouchableOpacity onPress={onOpen}>
+          <TouchableOpacity onPress={handleLoginPress}>
             <Text style={signupStyles.loginText}>Login</Text>
           </TouchableOpacity>
         </View>
