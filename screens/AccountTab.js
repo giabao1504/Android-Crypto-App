@@ -1,14 +1,19 @@
-import React, { useState } from 'react';
-import { View, Text, TouchableOpacity, StyleSheet, Modal, Image, Switch } from 'react-native';
+import React, { useState, useEffect } from 'react';
+import { View, Text, TouchableOpacity, StyleSheet, Modal, Image, Switch, Alert } from 'react-native';
 import Signup from './Signup';
 import Login from './Login';
 import { Ionicons } from '@expo/vector-icons';
+import { firebase } from '../config';
 
 const AccountTab = ({ onClose }) => {
   const [isSignupVisible, setIsSignupVisible] = useState(false);
   const [isLoginVisible, setIsLoginVisible] = useState(false);
   const [isDarkMode, setIsDarkMode] = useState(false);
   const [expandedOption, setExpandedOption] = useState(null);
+  const [user, setUser] = useState(null);
+  const [showAlert, setShowAlert] = useState(false);
+  const [username, setUsername] = useState('');
+  const [email, setEmail] = useState('');
 
   const openSignup = () => setIsSignupVisible(true);
   const openLogin = () => setIsLoginVisible(true);
@@ -20,6 +25,63 @@ const AccountTab = ({ onClose }) => {
     setExpandedOption((prev) => (prev === option ? null : option));
   };
 
+  const logout = () => {
+    firebase
+      .auth()
+      .signOut()
+      .then(() => {
+        Alert.alert('Thông báo', 'Bạn đã đăng xuất thành công!');
+        setUser(null); // Reset user state on logout
+        setUsername(''); // Reset username on logout
+        setEmail(''); // Reset email on logout
+      })
+      .catch((error) => {
+        console.error('Logout error:', error);
+        Alert.alert('Thông báo', 'Đã xảy ra lỗi trong quá trình đăng xuất!');
+      });
+  };
+
+  useEffect(() => {
+    const unsubscribe = firebase.auth().onAuthStateChanged((user) => {
+      setUser(user);
+      if (user) {
+        const userEmail = user.email || 'example@gmail.com';
+        const userName = userEmail.split('@')[0];
+        setEmail(userEmail);
+        setUsername(userName);
+        if (showAlert) {
+          Alert.alert('Thông báo', 'Bạn đã đăng nhập thành công!');
+          setShowAlert(false);
+        }
+      }
+    });
+
+    return unsubscribe;
+  }, [showAlert]);
+
+  const login = async (email, password) => {
+    try {
+      await firebase.auth().signInWithEmailAndPassword(email, password);
+      const currentUser = firebase.auth().currentUser;
+      if (currentUser) {
+        const userDoc = await firebase.firestore().collection('users').doc(currentUser.uid).get();
+        if (userDoc.exists) {
+          setUser(currentUser);
+          const userEmail = currentUser.email || 'example@gmail.com';
+          const userName = userEmail.split('@')[0];
+          setEmail(userEmail);
+          setUsername(userName);
+          setShowAlert(true); // Hiển thị thông báo đăng nhập thành công
+        } else {
+          Alert.alert('Thông báo', 'User không tồn tại');
+        }
+      }
+    } catch (error) {
+      console.error('Login error:', error);
+      Alert.alert('Thông báo', 'Đăng nhập thất bại');
+    }
+  };
+
   return (
     <View style={styles.container}>
       <View style={styles.accountInfo}>
@@ -28,8 +90,8 @@ const AccountTab = ({ onClose }) => {
           style={styles.avatar}
         />
         <View>
-          <Text style={styles.greeting}>Hi, ab8sah3zrozg</Text>
-          <Text style={styles.email}>example@gmail.com</Text>
+          <Text style={styles.greeting}>Hi, {username || 'ab8sah3zrozg'}</Text>
+          <Text style={styles.email}>{email || 'example@gmail.com'}</Text>
         </View>
       </View>
 
@@ -46,7 +108,6 @@ const AccountTab = ({ onClose }) => {
         {expandedOption === 'language' && (
           <View style={styles.subOptions}>
             <Text>English</Text>
-            {/* Thêm các tùy chọn ngôn ngữ khác nếu cần */}
           </View>
         )}
         <View style={styles.separator} />
@@ -79,7 +140,6 @@ const AccountTab = ({ onClose }) => {
         {expandedOption === 'settings' && (
           <View style={styles.subOptions}>
             <Text>Settings Options</Text>
-            {/* Thêm các tùy chọn cài đặt khác nếu cần */}
           </View>
         )}
         <View style={styles.separator} />
@@ -90,18 +150,25 @@ const AccountTab = ({ onClose }) => {
         {expandedOption === 'helpCenter' && (
           <View style={styles.subOptions}>
             <Text>Help Center Options</Text>
-            {/* Thêm các tùy chọn trung tâm trợ giúp khác nếu cần */}
           </View>
         )}
       </View>
 
       <View style={styles.loginRegisterSection}>
-        <TouchableOpacity style={styles.loginRegisterButton} onPress={openLogin}>
-          <Text style={styles.optionText}>Login</Text>
-        </TouchableOpacity>
-        <TouchableOpacity style={styles.loginRegisterButton} onPress={openSignup}>
-          <Text style={styles.optionText}>Register</Text>
-        </TouchableOpacity>
+        {user === null ? (
+          <>
+            <TouchableOpacity style={styles.loginRegisterButton} onPress={openLogin}>
+              <Text style={styles.optionText}>Login</Text>
+            </TouchableOpacity>
+            <TouchableOpacity style={styles.loginRegisterButton} onPress={openSignup}>
+              <Text style={styles.optionText}>Register</Text>
+            </TouchableOpacity>
+          </>
+        ) : (
+          <TouchableOpacity style={styles.loginRegisterButton} onPress={logout}>
+            <Text style={styles.optionText}>Logout</Text>
+          </TouchableOpacity>
+        )}
       </View>
 
       <View style={styles.contactSection}>
@@ -120,7 +187,7 @@ const AccountTab = ({ onClose }) => {
       </Modal>
 
       <Modal visible={isLoginVisible} animationType="slide">
-        <Login onClose={closeLogin} onOpen={openSignup} />
+        <Login onClose={closeLogin} onOpen={openSignup} onLogin={login} />
       </Modal>
     </View>
   );
@@ -130,7 +197,7 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: 'white',
-    padding: 8,
+    padding: 8
   },
   accountInfo: {
     flexDirection: 'row',
@@ -152,10 +219,10 @@ const styles = StyleSheet.create({
     color: 'gray',
   },
   section: {
-    backgroundColor: '#F3F3F3', // Màu nền của mỗi vùng
+    backgroundColor: '#F3F3F3',
     padding: 16,
     borderRadius: 8,
-    marginBottom: 16, // Khoảng cách giữa các vùng
+    marginBottom: 16,
   },
   optionRow: {
     flexDirection: 'row',
@@ -165,7 +232,7 @@ const styles = StyleSheet.create({
   },
   separator: {
     height: 1,
-    backgroundColor: '#EAEAEA', // Màu của dấu gạch
+    backgroundColor: '#EAEAEA',
     marginVertical: 8,
   },
   optionText: {

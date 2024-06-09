@@ -22,7 +22,7 @@ const Signup = ({ onClose, onOpen }) => {
           url: 'https://crypto-b9821.firebaseapp.com',
         })
           .then(() => {
-            alert('Verification email sent');
+            alert('Create account successfully');
             setTimeout(() => {
               onClose();
               onOpen();
